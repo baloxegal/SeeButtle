@@ -26,7 +26,7 @@ namespace Things
         public int Len { get; set; }
         public bool[] State { get; set; }
         public List<KeyValuePair<char, int>> CoordList;
-        
+        public List<KeyValuePair<char, int>> AdditionalCoordinates;
         public Ship()
         {            
         }
@@ -89,8 +89,7 @@ namespace Things
             {
                 for (int j = 0; j < myNavy.navy[i].Length; j++)
                 {
-                    Console.WriteLine($"Entering data for {myNavy.navy[i][j].Len} deck ship");
-                        
+                    Console.WriteLine($"Entering data for {myNavy.navy[i][j].Len} deck ship");                        
                     while (true)
                     {
                         Console.WriteLine($"Enter from \"{Map.X_COORD[0]}\" to \"{Map.X_COORD[Map.WIDTH - 1]}\" character for X coordinate");
@@ -117,6 +116,8 @@ namespace Things
                     }
                     while (true)
                     {
+                        if (myNavy.navy[i][j].Len == 1)
+                            break;
                         Console.WriteLine($"Enter one of the following characters \"{(char)Direction.NORTH}\", \"{(char)Direction.SOUTH}\", \"{(char)Direction.WEST}\" or \"{(char)Direction.EAST}\" for initialization of ship direction field");
                         var d = Console.ReadLine();
                         if (string.IsNullOrEmpty(d) || string.IsNullOrWhiteSpace(d) || int.TryParse(d, out int dir) || d.Length > 1 || !Enum.IsDefined(typeof(Direction), (int)d.ToCharArray()[0]))
@@ -127,50 +128,62 @@ namespace Things
                         myNavy.navy[i][j].Dir = d.ToCharArray()[0];
                         break;
                     }
+                    myNavy.navy[i][j].AdditionalCoordinates = new List<KeyValuePair<char, int>>();                    
                     myNavy.navy[i][j].CoordList = new List<KeyValuePair<char, int>>();
                     myNavy.navy[i][j].CoordList.Add(KeyValuePair.Create(myNavy.navy[i][j].X, myNavy.navy[i][j].Y));                    
                     for (int l = 1; l < myNavy.navy[i][j].Len; l++)
                     {
                         var key = myNavy.navy[i][j].CoordList.Last().Key;
-                        var value = myNavy.navy[i][j].CoordList.Last().Value;
+                        var value = myNavy.navy[i][j].CoordList.Last().Value;                        
                         switch (myNavy.navy[i][j].Dir)
-                        {
-                             
+                        {                             
                             case 'N' : 
-                                myNavy.navy[i][j].CoordList.Add(KeyValuePair.Create(key, value++));
+                                myNavy.navy[i][j].CoordList.Add(KeyValuePair.Create(key, ++value));                                
                                 break;
                             case 'S':
-                                myNavy.navy[i][j].CoordList.Add(KeyValuePair.Create(key, value--));
+                                myNavy.navy[i][j].CoordList.Add(KeyValuePair.Create(key, --value));
                                 break;
                             case 'W':
-                                myNavy.navy[i][j].CoordList.Add(KeyValuePair.Create(key--, value));
+                                myNavy.navy[i][j].CoordList.Add(KeyValuePair.Create(++key, value));
                                 break;
                             case 'E':
-                                myNavy.navy[i][j].CoordList.Add(KeyValuePair.Create(key++, value));
+                                myNavy.navy[i][j].CoordList.Add(KeyValuePair.Create(--key, value));
+                                break;
+                            default :
                                 break;
                         }
-                    }
-                    List<KeyValuePair<char, int>> AdditionalCoordinates = new List<KeyValuePair<char, int>>();
+                    }                   
                     for(int a = 0; a < myNavy.navy[i][j].CoordList.Count; a++)
-                    {
+                    {                        
                         var key = myNavy.navy[i][j].CoordList[a].Key;
+                        var kmi = key;
+                        var kma = key;
+                        var KMin = --kmi;
+                        var KMax = ++kma;
+
                         var value = myNavy.navy[i][j].CoordList[a].Value;
-                        for (char w = key--; w <= key++; w++)
+                        var vmi = value;
+                        var vma = value;
+                        var VMin = --vmi;
+                        var VMax = ++vma;
+
+                        for (char w = KMin; w <= KMax; w++)
                         {
-                            for(int h = value--; h < value++; h++)
-                            {
-                                if ((w == key && h == value) || AdditionalCoordinates.Contains(KeyValuePair.Create(w, h)))
+                            for(int h = VMin; h <= VMax; h++)
+                            {                                
+                                if (myNavy.navy[i][j].AdditionalCoordinates.Contains(KeyValuePair.Create(w, h)) || myNavy.navy[i][j].CoordList.Contains(KeyValuePair.Create(w, h)))                                
                                     continue;
-                                AdditionalCoordinates.Add(KeyValuePair.Create(w, h));
+                                myNavy.navy[i][j].AdditionalCoordinates.Add(KeyValuePair.Create(w, h));
                             }
                         }
                     }
                     for (int c = 0; c < myNavy.navy[i][j].CoordList.Count; c++)
                     {
-                        if(myNavy.navy[i][j].CoordList[c].Key < 'a' || myNavy.navy[i][j].CoordList[c].Key > Map.X_COORD[WIDTH - 1] || myNavy.navy[i][j].CoordList[c].Value < 0 || myNavy.navy[i][j].CoordList[c].Value > HEIGHT - 1)
+                        if(myNavy.navy[i][j].CoordList[c].Key < 'a' || myNavy.navy[i][j].CoordList[c].Key > Map.X_COORD[WIDTH - 1] || myNavy.navy[i][j].CoordList[c].Value < 0 || myNavy.navy[i][j].CoordList[c].Value > HEIGHT)
                         {
                             Console.WriteLine("You entered the coordinates at which the ship is out of the battlefield");
                             myNavy.navy[i][j].CoordList.Clear();
+                            myNavy.navy[i][j].AdditionalCoordinates.Clear();
                             break;
                         }                        
                     }
@@ -183,13 +196,15 @@ namespace Things
                     {                        
                         Console.WriteLine("You have mistakenly entered coordinates that have already been used");
                         myNavy.navy[i][j].CoordList.Clear();
+                        myNavy.navy[i][j].AdditionalCoordinates.Clear();
                     }
-                    else if (AllCoordinatesList.Any(coord => AdditionalCoordinates.Contains(coord)))
+                    else if (AllCoordinatesList.Any(coord => myNavy.navy[i][j].AdditionalCoordinates.Contains(coord)))
                     {
                         Console.WriteLine("You entered the wrong coordinates, the ships are touching");
                         myNavy.navy[i][j].CoordList.Clear();
+                        myNavy.navy[i][j].AdditionalCoordinates.Clear();
                     }
-                    else
+                    else                  
                         AllCoordinatesList.AddRange(myNavy.navy[i][j].CoordList);
                     if (myNavy.navy[i][j].CoordList.Count == 0)
                     {
@@ -214,16 +229,16 @@ namespace Things
         }        
         public Ship[][] navy;         
         public Navy()
-        {
-            ShipQuant[] ArrayShipQuant = (ShipQuant[])Enum.GetValues(typeof(ShipQuant));
-            DeckQuant[] ArrayDeckQuant = (DeckQuant[])Enum.GetValues(typeof(DeckQuant));            
-            navy = new Ship[ArrayShipQuant.Length][];            
+        {            
+            var ArrayShipQuant = Enum.GetValues(typeof(ShipQuant)).Cast<int>().ToArray().Reverse();
+            var ArrayDeckQuant = Enum.GetValues(typeof(DeckQuant)).Cast<int>().ToArray();
+            navy = new Ship[ArrayShipQuant.Count()][];            
             for (int i = 0; i < navy.Length; i++)
             {
-                navy[i] = new Ship[(int)ArrayShipQuant[i]];                
-                for (int j = 0; j <  navy[i].Length; j++)
+                navy[i] = new Ship[ArrayShipQuant.ElementAt(i)];                
+                for (int j = 0; j < navy[i].Length; j++)
                 {   
-                    navy[i][j] = new Ship { Len = (int)ArrayDeckQuant[i], State = new bool[(int)ArrayDeckQuant[i]] };
+                    navy[i][j] = new Ship { Len = ArrayDeckQuant[i], State = new bool[ArrayDeckQuant[i]] };
                 }
             }           
         }        
