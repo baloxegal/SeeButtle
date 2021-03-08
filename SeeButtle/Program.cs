@@ -6,8 +6,7 @@ namespace SeeButtle
 {
     using Things;
     class Program
-    {
-        static void Main(string[] args)
+    {        static void Main(string[] args)
         {
             Map gameMap = new Map();
             gameMap.Render();
@@ -49,6 +48,17 @@ namespace Things
                 State[i] = value;
             }
         }
+        public bool this[char j, int i]
+        {
+            get
+            {
+                return CoordList.Any(c => c.Equals(KeyValuePair.Create(j, i)));                
+            }
+            set
+            {
+                CoordList.Add(KeyValuePair.Create(j, i));
+            }
+        }
     }
 
     class Map
@@ -57,11 +67,27 @@ namespace Things
         const int HEIGHT = 10;
         const string X_COORD = "abcdefghijklmnopqrstuvwxyz";        
         Navy myNavy = new Navy();
+        int[,] MapCells;
         enum Direction
         {
             NORTH = 'N', SOUTH = 'S', WEST = 'W', EAST = 'E'
         }
         List<KeyValuePair<char, int>> AllCoordinatesList = new List<KeyValuePair<char, int>>();
+        public Map()
+        {
+            MapCells = new int[HEIGHT, WIDTH];
+        }
+        public int this[int i, int j]
+        {
+            get
+            {
+                return MapCells[i, j];
+            }
+            set
+            {
+                MapCells[i, j] = value;
+            }
+        }
         public void Render()
         {
             var b = "";
@@ -242,5 +268,16 @@ namespace Things
                 }
             }           
         }        
+        public Ship this[int i, int j]
+        {
+            get
+            {
+                return navy[i][j];
+            }
+            set
+            {
+                navy[i][j] = value;
+            }
+        }
     }
 }
